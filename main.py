@@ -1,7 +1,7 @@
 from agente import AgenteTemperatura
 
 POTENCIA = 450
-agente = AgenteTemperatura(POTENCIA)
+agente = AgenteTemperatura(True, POTENCIA)
 
 cenarios = {
         "Oscilação": [24.9 , 25.1 , 24.8 , 25.2],
@@ -10,9 +10,13 @@ cenarios = {
     }
 
 if __name__ == "__main__":
+    print(("Sistema ativado"))
     for nome, temps in cenarios.items():
+        if not agente.estado:
+            print("O sistema foi desativado por segurança")
+            break
         print(f"\n--- {nome} ---")
         for t in temps:
             p = agente.perceber(t)
             acao = agente.decidir(p)
-            print(f"Temperatura atual: {acao}")
+            print(f"Temperatura atual: {acao}\n")
