@@ -27,6 +27,21 @@ O ecossistema foi construído para simular o loop de Percepção-Ação em um am
 * **HTML5 / CSS3:** Interface (IHM) simulando um *Dashboard* de automação industrial.
 * **Chart.js:** Renderização do gráfico de comportamento térmico em tempo real.
 
+## Como rodar?
+
+1. Certifique-se de ter o **Python** instalado em sua máquina.
+2. Baixe e extraia os arquivos do projeto em uma pasta.
+3. Abra o terminal (ou prompt de comando) dentro da pasta raiz do projeto.
+4. Instale a biblioteca do servidor (Flask) executando o comando:
+5. Inicie o sistema executando:
+   ```bash
+   python app.py
+   ```
+6. Abra o seu navegador de internet e acesse o endereço local:
+   `http://127.0.0.1:5000`
+
+
+
 ## 📁 Estrutura do Projeto
 
 ```text
