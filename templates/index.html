@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Térmico IA</title>
+    <title>Agente V2 - Sistema Completo</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -11,153 +11,148 @@
 <body>
     <div class="sidebar">
         <div class="logo">
-            <i class="fas fa-snowflake"></i>
-            <h2>Agente IA</h2>
+            <i class="fas fa-brain"></i>
+            <h2>Agente V2</h2>
         </div>
         <ul class="nav">
-            <li class="active" onclick="switchTab('simulacao', this)"><i class="fas fa-sliders-h"></i> Painel Manual</li>
-            <li onclick="switchTab('cenarios', this)"><i class="fas fa-flask"></i> Rodar Cenários</li>
+            <li class="active" onclick="switchTab('simulacao', this)"><i class="fas fa-sliders-h"></i> Painel IA</li>
+            <li onclick="switchTab('cenarios', this)"><i class="fas fa-flask"></i> Rodar Testes</li>
         </ul>
     </div>
 
     <div class="main-content">
         <header>
-            <h1>Dashboard de Controle Térmico</h1>
-            <p>Monitoramento e aprendizado em tempo real</p>
+            <h1>Dashboard IA de Controle Térmico</h1>
+            <p>Com Histerese, Previsão, Anomalias e Modo Manual</p>
         </header>
 
         <div id="simulacao" class="tab-content active">
+            <div id="alerta-anomalia" class="alert-box hidden">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="txt-anomalia"></span>
+            </div>
+
             <div class="grid top-grid">
                 <div class="card stat-card">
                     <div class="stat-icon"><i class="fas fa-power-off"></i></div>
                     <div class="stat-info">
-                        <h3>Status Motor</h3>
+                        <h3>Motor Principal</h3>
                         <div id="led-status" class="led off"></div>
                         <span id="txt-status" class="badge danger">DESLIGADO</span>
                     </div>
                 </div>
                 <div class="card stat-card">
-                    <div class="stat-icon blue"><i class="fas fa-thermometer-half"></i></div>
+                    <div class="stat-icon blue"><i class="fas fa-crosshairs"></i></div>
                     <div class="stat-info">
-                        <h3>Limite Tolerância (L)</h3>
-                        <p class="value"><span id="txt-limite">--</span> °C</p>
+                        <h3>Meta & Histerese</h3>
+                        <p class="value"><span id="txt-meta">24.0</span> °C</p>
+                        <p style="font-size: 0.8rem; color: #666;">Limites: <span id="txt-limites">-- / --</span></p>
                     </div>
                 </div>
                 <div class="card stat-card">
-                    <div class="stat-icon yellow"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="stat-icon purple"><i class="fas fa-crystal-ball"></i></div>
                     <div class="stat-info">
-                        <h3>Espera Aprendida</h3>
-                        <p class="value"><span id="txt-espera">0</span> ticks</p>
+                        <h3>Previsão Térmica</h3>
+                        <p class="value"><span id="txt-previsao">--</span> °C</p>
                     </div>
                 </div>
             </div>
 
             <div class="grid main-grid">
                 <div class="card controls">
-                    <h3><i class="fas fa-cogs"></i> Sensores & Percepção</h3>
+                    <h3><i class="fas fa-sliders-h"></i> Sensores & Percepção</h3>
+                    
+                    <div class="input-group override-box">
+                        <label>Modo de Operação</label>
+                        <select id="modo" onchange="toggleModo()">
+                            <option value="Auto">Automático (Contexto da IA)</option>
+                            <option value="Manual">Manual (Sobrescrita)</option>
+                        </select>
+                        
+                        <div id="div-contexto">
+                            <label>Contexto de Uso</label>
+                            <select id="contexto">
+                                <option value="Normal">Normal (24°C)</option>
+                                <option value="Estudando">Estudando (22°C)</option>
+                                <option value="Dormindo">Dormindo (23°C)</option>
+                            </select>
+                        </div>
+
+                        <div id="div-manual" style="display:none;">
+                            <label>Definir Temperatura (°C)</label>
+                            <input type="number" step="0.1" id="temp_manual" value="24.0">
+                        </div>
+                    </div>
+
                     <div class="input-group">
-                        <label>Temp Atual (°C)</label>
+                        <label>Temp Atual do Ambiente (°C)</label>
                         <input type="number" step="0.1" id="temp_atual" value="25.0">
                     </div>
                     <div class="input-group">
-                        <label>Temp Desejada (°C)</label>
-                        <input type="number" step="0.1" id="temp_desejada" value="24.0">
-                    </div>
-                    <div class="input-group">
-                        <label>Ocupação (Pessoas)</label>
+                        <label>Quantidade de Pessoas</label>
                         <input type="number" id="pessoas" value="1">
                     </div>
+                    
                     <div class="switches">
                         <label class="switch-container">
                             <input type="checkbox" id="bloqueio">
                             <span class="slider"></span>
-                            Obstrução de Ar
-                        </label>
-                        <label class="switch-container">
-                            <input type="checkbox" id="energia">
-                            <span class="slider"></span>
-                            Crise de Energia
+                            Obstrução Saída de Ar
                         </label>
                     </div>
-                    <button class="btn-primary" onclick="enviarPercepcao()">Enviar Leitura ao Agente</button>
+                    <button class="btn-primary" onclick="enviarPercepcao()">Executar Ciclo (Tick)</button>
+
+                    <div class="log-miniatura">
+                        <p><strong>Ação IA:</strong> <span id="txt-acao" class="highlight">-</span></p>
+                        <p><strong>Motivo:</strong> <span id="txt-msg">-</span></p>
+                    </div>
                 </div>
 
                 <div class="card chart-container">
-                    <h3><i class="fas fa-chart-line"></i> Histórico de Temperatura</h3>
                     <canvas id="tempChart"></canvas>
                 </div>
-            </div>
-
-            <div class="card log-section">
-                <h3><i class="fas fa-list-ul"></i> Última Decisão</h3>
-                <p><strong>Ação:</strong> <span id="txt-acao" class="highlight">-</span></p>
-                <p><strong>Motivo/Mensagem:</strong> <span id="txt-msg">-</span></p>
-                <p><strong>Memória (Últimas 5):</strong> <span id="txt-memoria">[]</span></p>
             </div>
         </div>
 
         <div id="cenarios" class="tab-content" style="display: none;">
             <div class="card">
-                <h3><i class="fas fa-play-circle"></i> Execução Isolada de Testes</h3>
-                <p>Execute os cenários exigidos na atividade para ver como o agente reage ao array completo.</p>
+                <h3><i class="fas fa-play-circle"></i> Execução Isolada de Testes (V1/V2)</h3>
+                <p>Teste as matrizes exigidas na sua atividade para validar a lógica matemática.</p>
                 
-                <div class="scenario-buttons">
+                <div class="scenario-buttons" style="margin: 20px 0;">
                     <button class="btn-secondary" onclick="rodarTeste('Cenário 1: Oscilação', [24.9, 25.1, 24.8, 25.2], 25.0)">
-                        Rodar Cenário 1 (Oscilação)
+                        Rodar Cenário 1 (Oscilação próxima à meta 25)
                     </button>
                     <button class="btn-secondary warning" onclick="rodarTeste('Cenário 2: Calor Extremo', [30, 32, 35], 24.0)">
-                        Rodar Cenário 2 (Calor Extremo)
+                        Rodar Cenário 2 (Calor Extremo - Meta 24)
                     </button>
-                    <button class="btn-secondary blue" onclick="rodarTeste('Cenário 3: Resfriamento', [28, 27, 26, 25, 24], 24.0)">
-                        Rodar Cenário 3 (Resfriamento)
+                    <button class="btn-secondary blue" onclick="rodarTeste('Cenário 3: Resfriamento', [28, 27, 26, 25, 24, 23.5], 24.0)">
+                        Rodar Cenário 3 (Resfriamento Gradual - Meta 24)
                     </button>
                 </div>
 
                 <div id="resultado-teste" class="terminal-box">
-                    <p><em>Selecione um cenário acima para ver os resultados.</em></p>
+                    <p><em>Selecione um cenário acima para processar os ticks.</em></p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Configuração do Gráfico (Chart.js)
         const ctx = document.getElementById('tempChart').getContext('2d');
         const tempChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: [], // Tempos (ticks)
+                labels: [],
                 datasets: [
-                    {
-                        label: 'Temp Atual',
-                        data: [],
-                        borderColor: '#ff6b6b',
-                        tension: 0.3,
-                        fill: false
-                    },
-                    {
-                        label: 'Limite (L)',
-                        data: [],
-                        borderColor: '#feca57',
-                        borderDash: [5, 5],
-                        tension: 0
-                    },
-                    {
-                        label: 'Meta',
-                        data: [],
-                        borderColor: '#48dbfb',
-                        tension: 0
-                    }
+                    { label: 'Temp Atual', data: [], borderColor: '#ff6b6b', tension: 0.3, fill: false },
+                    { label: 'Liga (Sup)', data: [], borderColor: '#feca57', borderDash: [5, 5], tension: 0 },
+                    { label: 'Desliga (Inf)', data: [], borderColor: '#00b894', borderDash: [5, 5], tension: 0 }
                 ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: false } }
-            }
+            options: { responsive: true, maintainAspectRatio: false }
         });
 
-        // Navegação de Abas
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
             document.querySelectorAll('.nav li').forEach(l => l.classList.remove('active'));
@@ -165,14 +160,25 @@
             element.classList.add('active');
         }
 
-        // Simulação Manual
+        function toggleModo() {
+            const modo = document.getElementById('modo').value;
+            if(modo === 'Manual') {
+                document.getElementById('div-contexto').style.display = 'none';
+                document.getElementById('div-manual').style.display = 'block';
+            } else {
+                document.getElementById('div-contexto').style.display = 'block';
+                document.getElementById('div-manual').style.display = 'none';
+            }
+        }
+
         async function enviarPercepcao() {
             const payload = {
                 temp_atual: document.getElementById('temp_atual').value,
-                temp_desejada: document.getElementById('temp_desejada').value,
                 pessoas: document.getElementById('pessoas').value,
+                contexto: document.getElementById('contexto').value,
                 bloqueio: document.getElementById('bloqueio').checked,
-                energia_critica: document.getElementById('energia').checked
+                modo: document.getElementById('modo').value,
+                temp_manual: document.getElementById('temp_manual').value
             };
 
             const response = await fetch('/perceber', {
@@ -181,49 +187,47 @@
                 body: JSON.stringify(payload)
             });
             const data = await response.json();
-            atualizarInterfaceManual(data);
-        }
 
-        function atualizarInterfaceManual(data) {
-            // Status UI
+            // Atualiza UI Principal
             const led = document.getElementById('led-status');
             const badge = document.getElementById('txt-status');
             if (data.estado) {
                 led.className = 'led on';
-                badge.className = 'badge success';
-                badge.innerText = 'LIGADO';
+                badge.className = 'badge success'; badge.innerText = 'LIGADO';
             } else {
                 led.className = 'led off';
-                badge.className = 'badge danger';
-                badge.innerText = 'DESLIGADO';
+                badge.className = 'badge danger'; badge.innerText = 'DESLIGADO';
             }
 
+            document.getElementById('txt-meta').innerText = data.temp_alvo;
+            document.getElementById('txt-limites').innerText = `${data.limite_sup} / ${data.limite_inf}`;
+            document.getElementById('txt-previsao').innerText = data.temp_prevista;
             document.getElementById('txt-acao').innerText = data.acao;
-            document.getElementById('txt-limite').innerText = data.limite_l || '--';
-            document.getElementById('txt-espera').innerText = data.prox_espera || 0;
             document.getElementById('txt-msg').innerText = data.msg;
-            document.getElementById('txt-memoria').innerText = JSON.stringify(data.memoria);
+
+            const alertBox = document.getElementById('alerta-anomalia');
+            if(data.anomalia || data.acao.includes("Segurança")) {
+                alertBox.classList.remove('hidden');
+                document.getElementById('txt-anomalia').innerText = data.msg;
+            } else {
+                alertBox.classList.add('hidden');
+            }
 
             // Atualiza Gráfico
-            if(data.acao !== "Aguardando") {
-                tempChart.data.labels.push(`Tick ${data.tempo}`);
-                tempChart.data.datasets[0].data.push(data.temp_atual);
-                tempChart.data.datasets[1].data.push(data.limite_l || data.temp_desejada);
-                tempChart.data.datasets[2].data.push(data.temp_desejada);
-                
-                // Manter apenas últimos 10 pontos visíveis
-                if(tempChart.data.labels.length > 10) {
-                    tempChart.data.labels.shift();
-                    tempChart.data.datasets.forEach(ds => ds.data.shift());
-                }
-                tempChart.update();
+            tempChart.data.labels.push(`Tick ${data.tempo}`);
+            tempChart.data.datasets[0].data.push(data.temp_atual);
+            tempChart.data.datasets[1].data.push(data.limite_sup);
+            tempChart.data.datasets[2].data.push(data.limite_inf);
+            if(tempChart.data.labels.length > 15) {
+                tempChart.data.labels.shift();
+                tempChart.data.datasets.forEach(ds => ds.data.shift());
             }
+            tempChart.update();
         }
 
-        // Execução de Cenários Isolados
         async function rodarTeste(nome, temps, alvo) {
             const box = document.getElementById('resultado-teste');
-            box.innerHTML = `<p>Executando <strong>${nome}</strong>... aguarde.</p>`;
+            box.innerHTML = `<p>Processando Ticks do <strong>${nome}</strong>...</p>`;
 
             const response = await fetch('/rodar_cenario', {
                 method: 'POST',
@@ -232,22 +236,22 @@
             });
             const data = await response.json();
 
-            let html = `<h4>Resultado: ${nome}</h4>`;
-            html += `<p class="info-text">Meta: ${alvo}°C | Leituras Enviadas: [${temps.join(', ')}]</p>`;
-            html += `<table><tr><th>Leitura</th><th>Ação</th><th>Status Motor</th><th>Espera</th><th>Limite(L)</th></tr>`;
+            let html = `<h4><i class="fas fa-check-circle c-green"></i> Resultado: ${nome}</h4>`;
+            html += `<p class="info-text">Meta Fixada: ${alvo}°C | Array Analisado: [${temps.join(', ')}]</p>`;
+            html += `<table><tr><th>Tick (Tempo)</th><th>Temp Lida</th><th>Ação do Agente</th><th>Motor</th><th>Zonas (Sup/Inf)</th></tr>`;
             
             data.resultados.forEach(res => {
                 const status = res.estado ? '<span class="c-green">LIGADO</span>' : '<span class="c-red">DESLIGADO</span>';
                 html += `<tr>
+                    <td>Tick ${res.tempo}</td>
                     <td>${res.temp_atual}°C</td>
                     <td><strong>${res.acao}</strong></td>
                     <td>${status}</td>
-                    <td>${res.prox_espera !== undefined ? res.prox_espera : '-'}</td>
-                    <td>${res.limite_l || '-'}</td>
+                    <td>${res.limite_sup} / ${res.limite_inf}</td>
                 </tr>`;
             });
             html += `</table>`;
-            html += `<p class="memoria-footer">Memória Final armazenada: ${JSON.stringify(data.memoria_final)}</p>`;
+            html += `<p class="memoria-footer">Fila FIFO de Memória Final: ${JSON.stringify(data.memoria_final)}</p>`;
             
             box.innerHTML = html;
         }

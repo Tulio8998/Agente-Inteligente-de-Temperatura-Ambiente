@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, jsonify
-from agente import AgenteTermico
+from agente import AgenteTermicoV2
 
 app = Flask(__name__)
-agente_interativo = AgenteTermico(temp_desejada=24.0)
+agente = AgenteTermicoV2()
 
 @app.route('/')
 def index():
@@ -14,13 +14,11 @@ def perceber():
     temp_atual = float(dados.get('temp_atual'))
     pessoas = int(dados.get('pessoas', 1))
     bloqueio = dados.get('bloqueio', False)
-    energia = dados.get('energia_critica', False)
-    
-    if 'temp_desejada' in dados:
-        agente_interativo.temp_desejada = float(dados['temp_desejada'])
+    contexto = dados.get('contexto', 'Normal')
+    modo = dados.get('modo', 'Auto')
+    temp_manual = float(dados.get('temp_manual', 24.0))
 
-    resposta = agente_interativo.perceber_e_agir(temp_atual, pessoas, bloqueio, energia)
-    resposta['memoria'] = list(agente_interativo.memoria)
+    resposta = agente.perceber_e_agir(temp_atual, pessoas, contexto, bloqueio, modo, temp_manual)
     return jsonify(resposta)
 
 @app.route('/rodar_cenario', methods=['POST'])
@@ -29,12 +27,13 @@ def rodar_cenario():
     temperaturas = dados.get('temperaturas', [])
     temp_alvo = float(dados.get('temp_alvo', 24.0))
     
-    # Cria um agente isolado para o teste não sujar a simulação manual
-    agente_teste = AgenteTermico(temp_desejada=temp_alvo)
+    # Isola o teste criando um novo agente
+    agente_teste = AgenteTermicoV2()
     resultados = []
     
     for t in temperaturas:
-        res = agente_teste.perceber_e_agir(float(t))
+        # Roda o teste forçando o Modo Manual na meta solicitada
+        res = agente_teste.perceber_e_agir(float(t), modo="Manual", temp_manual=temp_alvo)
         resultados.append(res)
         
     return jsonify({
