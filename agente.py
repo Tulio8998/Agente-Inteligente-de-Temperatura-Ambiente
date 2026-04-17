@@ -8,8 +8,10 @@ class AgenteTemperatura:
     def __init__(self, estado, potencia):
         self.potencia = potencia
         self.estado = estado
+        self.historico = []
 
     def perceber ( self , ambiente ):
+        self.historico.append(ambiente)
         print(f"A temperatura é de: {ambiente}°C")
 
         if ambiente < 20:

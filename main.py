@@ -20,3 +20,4 @@ if __name__ == "__main__":
             p = agente.perceber(t)
             acao = agente.decidir(p)
             print(f"Temperatura atual: {acao}\n")
+            print(f"Historico: {agente.historico}")
